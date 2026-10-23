@@ -1,0 +1,8 @@
+import { AdminHeading } from "@/components/admin/admin-heading";
+import { AdminForm } from "@/components/admin/admin-form";
+import { getPageCopy, type PageKey } from "@/lib/page-copy";
+import { updatePageAction } from "@/app/admin/actions";
+export default async function PagesPage() {
+ const pages=await Promise.all((['about','services','contact'] as PageKey[]).map(async key=>({key,...await getPageCopy(key)})));
+ return <div className="mx-auto max-w-[1120px] px-5 py-7 sm:px-8 sm:py-10 lg:px-12"><AdminHeading eyebrow="Website content" title="Pages" description="Edit the main copy on your About, Services and Contact pages."/><div className="mt-7 grid gap-5">{pages.map(page=><section key={page.key} className="admin-panel"><div className="flex justify-between gap-3"><h2 className="font-medium">{page.label}</h2><a href={`/${page.key}`} target="_blank" rel="noreferrer" className="text-xs underline underline-offset-4">View page</a></div><AdminForm action={updatePageAction} className="mt-5 grid gap-4"><input type="hidden" name="key" value={page.key}/>{(['eyebrow','title','intro','body'] as const).map(field=><label key={field}><span className="mb-2 block text-xs capitalize text-black/55">{field==='intro'?'Introduction':field}</span>{field==='eyebrow'?<input name={field} className="field" defaultValue={page[field]} maxLength={120}/>:<textarea name={field} className="field" rows={field==='title'?2:3} defaultValue={page[field]} required={field==='title'} maxLength={field==='title'?400:5000}/>}</label>)}<button className="button button-secondary w-fit">Save {page.label.toLowerCase()} page</button></AdminForm></section>)}</div></div>;
+}

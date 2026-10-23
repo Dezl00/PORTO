@@ -1,0 +1,7 @@
+import { Database, Image, LockKeyhole } from "lucide-react";
+import { hasDatabaseConnection } from "@/lib/prisma";
+import { isCloudinaryConfigured } from "@/lib/cloudinary";
+export function ConnectionStatus() {
+ const values=[{label:'Content storage',ready:hasDatabaseConnection(),icon:Database,description:'Secure storage for projects, pages and settings.'}, {label:'Image uploads',ready:isCloudinaryConfigured(),icon:Image,description:'Upload and reuse images throughout your portfolio.'}, {label:'Owner access',ready:Boolean(process.env.ADMIN_EMAIL&&process.env.ADMIN_PASSWORD_HASH&&process.env.AUTH_SECRET&&process.env.AUTH_SECRET.length>=32),icon:LockKeyhole,description:'Private sign-in and account protection.'}];
+ return <section className="admin-panel scroll-mt-24" id="connections"><h2 className="font-medium">Workspace status</h2><p className="mt-2 text-sm leading-6 text-black/55">Configuration status for your workspace features.</p><div className="mt-5 grid gap-3">{values.map(({label,ready,icon:Icon,description})=><div key={label} className="rounded-xl border border-black/10 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><p className="flex items-center gap-2 text-sm font-medium"><Icon size={16}/>{label}</p><span className="text-xs text-black/55">{ready?'Configured':'Setup needed'}</span></div><p className="mt-2 text-xs leading-5 text-black/45">{description}</p></div>)}</div></section>;
+}

@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+enum SectionType {
+  HERO
+  FEATURED_PROJECTS
+  CATEGORIES
+  ABOUT
+  SERVICES
+  TESTIMONIALS
+  CTA
+  CUSTOM
+}
+
+enum BlockType {
+  TEXT
+  IMAGE
+  VIDEO
+  EMBED
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+}
+
+model Project {
+  id             String                @id @default(cuid())
+  title          String
+  slug           String                @unique
+  excerpt        String?
+  description    String?
+  client         String?
+  year           Int?
+  services       String[]
+  externalLink   String?
+  status         ProjectStatus         @default(DRAFT)
+  isFeatured     Boolean               @default(false)
+  sortOrder      Int                   @default(0)
+  publishedAt    DateTime?
+  seoTitle       String?
+  seoDescription String?
+  coverAssetId   String?
+  coverAsset     MediaAsset?           @relation("ProjectCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  categoryId     String?
+  category       Category?             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  tags           Tag[]                 @relation("ProjectTags")
+  blocks         ProjectBlock[]
+  slugHistory    ProjectSlugRedirect[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([categoryId, sortOrder])
+}
+
+model ProjectSlugRedirect {
+  oldSlug   String   @id
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id             String      @id @default(cuid())
+  name           String
+  slug           String      @unique
+  description    String?
+  coverAssetId   String?
+  coverAsset     MediaAsset? @relation("CategoryCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  isVisible      Boolean     @default(true)
+  sortOrder      Int         @default(0)
+  seoTitle       String?
+  seoDescription String?
+  projects       Project[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([isVisible, sortOrder])
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  projects Project[] @relation("ProjectTags")
+}
+
+model MediaAsset {
+  id             String         @id @default(cuid())
+  cloudinaryId   String?        @unique
+  publicId       String         @unique
+  secureUrl      String
+  kind           MediaKind      @default(IMAGE)
+  format         String?
+  mimeType       String?
+  width          Int?
+  height         Int?
+  bytes          Int?
+  alt            String?
+  folder         String?
+  projectCovers  Project[]      @relation("ProjectCover")
+  categoryCovers Category[]     @relation("CategoryCover")
+  projectBlocks  ProjectBlock[]
+  createdAt      DateTime       @default(now())
+}
+
+model ProjectBlock {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type      BlockType
+  layout    String   @default("full")
+  groupId   String?
+  sortOrder Int      @default(0)
+  assetId   String?
+  asset     MediaAsset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  content   Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, sortOrder])
+}
+
+model HomeSection {
+  id        String      @id @default(cuid())
+  key       String      @unique
+  label     String
+  type      SectionType
+  isVisible Boolean     @default(true)
+  sortOrder Int         @default(0)
+  content   Json?
+  updatedAt DateTime    @updatedAt
+
+  @@index([isVisible, sortOrder])
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?
+  iconKey     String?
+  isVisible   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isVisible, sortOrder])
+}
+
+model Testimonial {
+  id         String   @id @default(cuid())
+  clientName String
+  role       String?
+  company    String?
+  quote      String
+  isVisible  Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  service   String?
+  budget    String?
+  message   String
+  status    ContactStatus @default(NEW)
+  readAt    DateTime?
+  repliedAt DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+}
+
+model SiteSettings {
+  id                    String   @id @default("site")
+  brandName             String   @default("SHOBAKY STUDIO")
+  founderName           String   @default("MOHAMED ALSHOBAKY")
+  siteDescription       String?  @default("Independent graphic design by Mohamed Alshobaky.")
+  accentColor           String   @default("#111111")
+  logoUrl               String?
+  faviconUrl            String?
+  defaultSeoTitle       String?  @default("SHOBAKY STUDIO — Graphic Design Portfolio")
+  defaultSeoDescription String?  @default("Selected graphic design work by Mohamed Alshobaky, founder of SHOBAKY STUDIO.")
+  socialLinks           Json?
+  contactDetails        Json?
+  analyticsCode         String?
+  pageContent           Json?
+  updatedAt             DateTime @updatedAt
+}
+
+// A single owner credential override. No users, registration, or roles.
+model AdminCredential {
+  id             String   @id @default("owner")
+  passwordHash   String
+  sessionVersion Int      @default(1)
+  updatedAt      DateTime @updatedAt
+}
